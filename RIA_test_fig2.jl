@@ -37,7 +37,6 @@ Jio = orbital_compton_profiles(Z)
 
     return J₀ 
     [in ħ/(mₑe²) → atomic units].
-    """
 """
 alpha = 0.0072973525643 # sommerfeld constant = e²/(ħc)
 c = 2.99792458e8 # m/s
