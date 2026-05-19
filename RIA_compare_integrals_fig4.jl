@@ -3,24 +3,23 @@ integrating DDCS(E,mu) over mu to get DCS(E)
 fig 4 Brusa paper
 """
 
+using Radiant
 using Plots
 using QuadGK
 using FastGaussQuadrature, LinearAlgebra
 
-include("Radiant.jl/src/cross_sections/electron_subshells.jl")
-include("Radiant.jl/src/cross_sections/orbital_compton_profiles.jl")
 
 Z = 13 # atomic number (Al)
-E_keV = 500. # keV. initial photon energy
-x_start = 0.2
+E_keV = 50. # keV. initial photon energy
+x_start = 0.7
 
 # number of nodes for Gauss quadrature
-nodes = 50
+nodes = 20
 # Gauss-Jacobi alpha, beta > -1
 alpha = 1/3 
 beta = -1/3
 
-_, Zi, Ui, _, _, _ = electron_subshells(Z,false)
+_, Zi, Ui, _, _, _ = Radiant.electron_subshells(Z,false)
     """
     electron_subshells(Z::Int64,is_free::Bool=false)
     - `Z::Int64`: atomic number of the element.
@@ -34,7 +33,7 @@ _, Zi, Ui, _, _, _ = electron_subshells(Z,false)
     return Nshells,Zi,Ui,Ti,ri,subshells
     """
 
-Jio = orbital_compton_profiles(Z)
+Jio = Radiant.orbital_compton_profiles(Z)
     """
     return J₀ 
     in ħ/(mₑe²) → atomic units
@@ -108,7 +107,6 @@ function GaussLegendre_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussChebyshev1_integrate_ddcs_over_mu(E_f)
     
     mu, weights = gausschebyshevt(nodes)
@@ -118,7 +116,6 @@ function GaussChebyshev1_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussChebyshev2_integrate_ddcs_over_mu(E_f)
     
     mu, weights = gausschebyshevu(nodes)
@@ -128,7 +125,6 @@ function GaussChebyshev2_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussChebyshev3_integrate_ddcs_over_mu(E_f)
     
     mu, weights = gausschebyshevv(nodes)
@@ -138,7 +134,6 @@ function GaussChebyshev3_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussChebyshev4_integrate_ddcs_over_mu(E_f)
     
     mu, weights = gausschebyshevw(nodes)
@@ -148,7 +143,6 @@ function GaussChebyshev4_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussJacobi_integrate_ddcs_over_mu(E_f, alpha, beta)
     
     mu, weights = gaussjacobi(nodes, alpha, beta)
@@ -158,7 +152,6 @@ function GaussJacobi_integrate_ddcs_over_mu(E_f, alpha, beta)
 
     return integral
 end
-
 function GaussRadau_integrate_ddcs_over_mu(E_f)
 
     mu, weights = gaussradau(nodes)
@@ -167,7 +160,6 @@ function GaussRadau_integrate_ddcs_over_mu(E_f)
 
     return integral
 end
-
 function GaussLobatto_integrate_ddcs_over_mu(E_f)
 
     mu, weights = gausslobatto(nodes)
@@ -185,6 +177,7 @@ E_f_vals = range(x_start*E, E, length=200) # paper starts at 0.7E
 xvals = E_f_vals ./ E
 # y axis
 quadgk_yvals = (E/Z)*2*pi*[quadgk_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
 GaussLegendre_yvals = (E/Z)*2*pi*[GaussLegendre_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
 GaussChebyshev1_yvals = (E/Z)*2*pi*[GaussChebyshev1_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
 GaussChebyshev2_yvals = (E/Z)*2*pi*[GaussChebyshev2_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
@@ -194,15 +187,42 @@ GaussJacobi_yvals = (E/Z)*2*pi*[GaussJacobi_integrate_ddcs_over_mu(E_f, alpha, b
 GaussRadau_yvals = (E/Z)*2*pi*[GaussRadau_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
 #GaussLobatto_yvals = (E/Z)*2*pi*[GaussLobatto_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals] # diverges when few nodes
 
+t1 = @elapsed (E/Z)*2*pi*[quadgk_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t2 = @elapsed (E/Z)*2*pi*[GaussLegendre_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t3 = @elapsed (E/Z)*2*pi*[GaussChebyshev1_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t4 = @elapsed (E/Z)*2*pi*[GaussChebyshev2_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t5 = @elapsed (E/Z)*2*pi*[GaussChebyshev3_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t6 = @elapsed (E/Z)*2*pi*[GaussChebyshev4_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+t7 = @elapsed (E/Z)*2*pi*[GaussJacobi_integrate_ddcs_over_mu(E_f, alpha, beta) for E_f in E_f_vals]
+
+t8 = @elapsed (E/Z)*2*pi*[GaussRadau_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
+
+println("integration times of each graphs. $nodes nodes for Gauss integrations:")
+println("quadgk: ", t1)
+println("GaussLegendre: ", t2)
+println("GaussChebyshev1: ", t3)
+println("GaussChebyshev2: ", t4)
+println("GaussChebyshev3: ", t5)
+println("GaussChebyshev4: ", t6)
+println("GaussJacobi: ", t7)
+println("GaussRadau: ", t8)
+
 Plots.plot(
     xvals, quadgk_yvals,
     xlabel = "E' / E",
     ylabel = raw"$\frac{E}{Z}\frac{d\sigma}{dE}$ (barn)",
     label = "quadgk",
     title = "DCS(E') for Al, E = $E_keV keV, $nodes nodes",
-    legend=:bottom
+    legend=:topleft
 )
-#=
+
+
 Plots.plot!(xvals, GaussLegendre_yvals, label = "GaussLegendre")
 Plots.plot!(xvals, GaussChebyshev1_yvals, label = "GaussChebyshev1")
 Plots.plot!(xvals, GaussChebyshev2_yvals, label = "GaussChebyshev2")
@@ -212,4 +232,3 @@ a=round(alpha, digits=2); b=round(beta, digits=2)
 Plots.plot!(xvals, GaussJacobi_yvals, label = "GaussJacobi, α=$a, β=$b")
 Plots.plot!(xvals, GaussRadau_yvals, label = "GaussRadau")
 #Plots.plot!(xvals, GaussLobatto_yvals,label = "GaussLobatto")
-=#
