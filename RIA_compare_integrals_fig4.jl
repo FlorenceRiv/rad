@@ -14,7 +14,7 @@ E_keV = 50. # keV. initial photon energy
 x_start = 0.7
 
 # number of nodes for Gauss quadrature
-nodes = 20
+nodes = 100
 # Gauss-Jacobi alpha, beta > -1
 alpha = 1/3 
 beta = -1/3
@@ -203,7 +203,7 @@ t7 = @elapsed (E/Z)*2*pi*[GaussJacobi_integrate_ddcs_over_mu(E_f, alpha, beta) f
 
 t8 = @elapsed (E/Z)*2*pi*[GaussRadau_integrate_ddcs_over_mu(E_f) for E_f in E_f_vals]
 
-println("integration times of each graphs. $nodes nodes for Gauss integrations:")
+println("integration times of each graphs. $E_keV keV,$nodes nodes for Gauss integrations:")
 println("quadgk: ", t1)
 println("GaussLegendre: ", t2)
 println("GaussChebyshev1: ", t3)
