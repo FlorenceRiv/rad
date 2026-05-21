@@ -36,7 +36,7 @@ function mec2_to_keV(E_mec2)
 end
 
 E = keV_to_mec2(E_i) # keV → mₑc²
-Ef_start = keV_to_mec2(Ef_start) # eV → mₑc²
+Ef_start = keV_to_mec2(Ef_start) # keV → mₑc²
 
 E0 = 1. # mₑc² rest mass energy of electron
 rₑ = 2.8179e-13 # (cm) electron radius
