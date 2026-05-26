@@ -8,9 +8,9 @@ Functions I use frequently
     - mec2_to_keV(E_mec2)
     - mec2_to_eV(E_mec2)
 
-    - ddcs_ria(E, Ef, μ)
+    - ddcs_ria(E, Ef, Ui, Zi, Jio, μ)
 
-    - legendre_moment(l::Int, Ef::Float64)
+    - legendre_moment(l, E, Ef, Zi, Ui, Jio)
 
 """
 
@@ -21,7 +21,7 @@ include("Radiant.jl/src/cross_sections/orbital_compton_profiles.jl")
 
 function inverse_mₑc²_units_orbital_compton_profiles(Z)
 
-    # divide by fine structure constant to match E_z units
+    # Scale from atomic units to inverse electron rest mass units 1/mₑc² by multiplying 1/α
     return orbital_compton_profiles(Z) .* 137.035999177
 
 end
@@ -53,10 +53,15 @@ E0 = 1. # mₑc² rest mass energy of electron
 rₑ = 2.8179e-13 # (cm) electron radius
 
 
-function ddcs_ria(E, Ef, μ) # returns σs in barn/sr
+function ddcs_ria(E, Ef, Zi, Ui, Jio, μ) # returns σs in barn/sr
+
+# Ui and Jio vector constants are not calculated in this function to avoid unecessary repetition (and longer runtime)
 
     # E: initial photon energy in mₑc²
     # Ef: outgoing photon energy in mₑc²
+    # Zi: vector of number of electrons in each subshell i
+    # Ui: binding energy of subshell i in mₑc²
+    # Jio: part of orbital compton profile of subshell i in mₑc²
     # μ: cosine of scattering angle
 
     Eq = sqrt(E^2 + Ef^2 - 2*E*Ef*μ)
@@ -110,13 +115,17 @@ Radiant legendre_polynomials code:
     - Pl: Legendre polynomial of order l evaluated at μ
 """
 
-function legendre_moment(l::Int, Ef::Float64)
+function legendre_moment(l, E, Ef, Zi, Ui, Jio)
 
     # l: Legendre order.
+    # E: initial photon energy in mₑc²
     # Ef: outgoing photon energy in mₑc²
-   
-    integrand = μ -> ddcs_ria(Ef, μ) * Radiant.legendre_polynomials(l, μ)
-   
+    # Zi: vector of number of electrons in each subshell i
+    # Ui: binding energy of subshell i in mₑc²
+    # Jio: part of orbital compton profile of subshell i in mₑc²
+
+    integrand = μ -> ddcs_ria(E, Ef, Zi, Ui, Jio, μ) * Radiant.legendre_polynomials(l, μ)
+
     moment, err = quadgk(integrand, -1.0, 1.0)
    
     return moment
