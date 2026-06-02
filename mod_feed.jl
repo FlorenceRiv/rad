@@ -1,5 +1,3 @@
-using Radiant
-include("Radiant.jl/src/structures/Interaction.jl")
 
 """
     feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,
@@ -48,7 +46,7 @@ function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Flo
 𝓕 = zeros(Ng+1,L+1)
 𝓕ₑ = zeros(Ng+1)
 
-if interaction.model != "impulse_approximation"
+if ! ((interaction isa Compton) && (interaction.model == "impulse_approximation")) # check for special case of compton ria, otherwise do the regular feed calculation
 
     ΔQ = get_mass_energy_variation(interaction,type,true)
 
@@ -94,7 +92,7 @@ if interaction.model != "impulse_approximation"
         end
     end
 
-elseif interaction.model == "impulse_approximation" && interaction == Compton()
+elseif ((interaction isa Compton) && (interaction.model == "impulse_approximation")) # special case: random impulse approximation for Compton scattering
         
     interaction.is_subshells_dependant = true # ria needs subshell depedency
     type = "S" # only doing photon for now
@@ -102,7 +100,9 @@ elseif interaction.model == "impulse_approximation" && interaction == Compton()
     Nz = length(Z)
     for i in 1:Nz # for every element
 
-        Nshells,Zi,Ui,Ti,ri,Jio = electron_subshells(Z[i],false) # electrons not free
+        Nshells,Zi,Ui,Ti,ri,_ = electron_subshells(Z[i],false) # electrons not free
+        Jio = orbital_compton_profiles(Z) .* 137.035999177 # Necessary for compton profile,
+        # Scale from atomic units to inverse electron rest mass units 1/mₑc² by multiplying 1/α
 
         macro_factor = nuclei_density(Z[i], ρ) * ωz[i]
 
