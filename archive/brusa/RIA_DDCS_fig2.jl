@@ -29,8 +29,8 @@ Jio = orbital_compton_profiles(Z)
     return J₀ 
     in ħ/(mₑe²) → atomic units
     """
-
-Jio .*= 137.035999177 # divide by fine structure constant to match E_z units
+# divide by fine structure constant to match E_z units
+Jio .*= 137.035999177 
 
 
 # E unit conversion
