@@ -100,9 +100,9 @@ elseif ((interaction isa Compton) && (interaction.model == "impulse_approximatio
     Nz = length(Z)
     for i in 1:Nz # for every element
 
-        Nshells,Zi,Ui,Ti,ri,_ = electron_subshells(Z[i],false) # electrons not free
-        Jio = orbital_compton_profiles(Z) .* 137.035999177 # Necessary for compton profile,
-        # Scale from atomic units to inverse electron rest mass units 1/mₑc² by multiplying 1/α
+        _,Zi,Ui,_,ri,_ = electron_subshells(Z[i],false) # electrons not free
+        # Jio is necessary for compton profile. Scale from atomic units to inverse electron rest mass units 1/mₑc² by multiplying 1/α
+        Jio = orbital_compton_profiles(Z[i]) .* 137.035999177
 
         macro_factor = nuclei_density(Z[i], ρ) * ωz[i]
 
