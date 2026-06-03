@@ -46,7 +46,7 @@ function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Flo
 𝓕 = zeros(Ng+1,L+1)
 𝓕ₑ = zeros(Ng+1)
 
-if ! ((interaction isa Compton) && (interaction.model == "impulse_approximation")) # check for special case of compton ria, otherwise do the regular feed calculation
+if ! ((interaction isa Compton) && (interaction.model == "impulse_approximation") && (type == "S")) # check for special case of compton ria, otherwise do the regular feed calculation
 
     ΔQ = get_mass_energy_variation(interaction,type,true)
 
@@ -92,26 +92,38 @@ if ! ((interaction isa Compton) && (interaction.model == "impulse_approximation"
         end
     end
 
-elseif ((interaction isa Compton) && (interaction.model == "impulse_approximation")) # special case: random impulse approximation for Compton scattering
+elseif ((interaction isa Compton) && (interaction.model == "impulse_approximation") && (type == "S")) 
+    # special case: random impulse approximation for Compton scattering
+    # only type == 'S' because electron production for RIA not yet implemented
+        # 'P' is handled by the regular feed function
         
     interaction.is_subshells_dependant = true # ria needs subshell depedency
-    type = "S" # only doing photon for now
 
     Nz = length(Z)
     for i in 1:Nz # for every element
 
         _,Zi,Ui,_,ri,_ = electron_subshells(Z[i],false) # electrons not free
+
+        # if incoming energy is lower than the lowest binding energy, skip this element since no scattering can occur
+        minimum_binding_energy = minimum(Ui)
+        if Ei < minimum_binding_energy continue end
+
         # Jio is necessary for compton profile. Scale from atomic units to inverse electron rest mass units 1/mₑc² by multiplying 1/α
         Jio = orbital_compton_profiles(Z[i]) .* 137.035999177
 
         macro_factor = nuclei_density(Z[i], ρ) * ωz[i]
 
         for gf in 1:Ng # Iterate through each final energy group
-    
+
             # Final energy group
             Ef⁻ = Eout[gf]; Ef⁺ = Eout[gf+1]
             Ef⁻,Ef⁺,isSkip = bounds(interaction,Ef⁻,Ef⁺,Ei,type)
             if isSkip continue end
+            # avoiding unecessary integrations:
+            # ddcs_ria returns 0 if Ef > Ei - min(Ui)
+            # upper bound  for final energy. impossible to scatter to an energy higher than the incoming energy minus the lowest binding energy
+            Ef⁻ = min(Ef⁻, Ei - minimum_binding_energy)
+            if Ef⁻ < Ef⁺ continue end # if the upper bound is now lower than the lower bound skip this group
 
             # integrate over final energy group
             group_moments, _ = quadgk(Ef⁺, Ef⁻) do Ef
@@ -119,11 +131,11 @@ elseif ((interaction isa Compton) && (interaction.model == "impulse_approximatio
                 # integrate legendre moment (ddcs over mu) for each l :
                 # ddcs_ria goes over all subshells
                 dcs_moment_array, _ = quadgk(-1.0, 1.0) do μ
-                    return Float64[ddcs_ria(Ei, Ef, Zi, Ui, Jio, μ) * Radiant.legendre_polynomials(l, μ) for l in 0:L]
+                    return [ddcs_ria(Ei, Ef, Zi, Ui, Jio, μ) * Radiant.legendre_polynomials(l, μ) for l in 0:L]
                 end
                 dcs_moment_array .*= 2π # integrate over phi
 
-                # energy-weighted L=0 moment for 𝓕ₑ
+                # energy-weighted L=0 moment for 𝓕ₑ. ΔQ=0
                 energy_weighted = dcs_moment_array[1] * Ef
                 
                 # push the energy-weighted value to the end of the vector
