@@ -139,7 +139,7 @@ Plots.plot(
     xvals, quadgk_yvals,
     xlabel = "E' / E",
     ylabel = raw"$\frac{E}{Z}\frac{d\sigma}{dE}$ (barn)",
-    label = "ddcs_ria (Combined)",
+    label = "ddcs_ria_heaviside",
     title = "DCS(E') for Al, E = $E_keV keV", # Removed undefined $nodes variable
     legend=:topleft
 )
